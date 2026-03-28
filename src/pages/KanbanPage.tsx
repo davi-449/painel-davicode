@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import api from '../lib/api';
 import {
   DndContext,
   PointerSensor,
@@ -224,7 +223,6 @@ function ClienteSheet({ cliente, onClose, onDispatch }: {
 
 // ── Main Kanban Page ──────────────────────────────
 export function KanbanPage() {
-  const { token } = useAuth();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -236,13 +234,11 @@ export function KanbanPage() {
 
   useEffect(() => {
     fetchClientes();
-  }, [token]);
+  }, []);
 
   const fetchClientes = async () => {
     try {
-      const { data } = await axios.get('http://localhost:3001/api/clientes', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await api.get('/clientes');
       setClientes(data);
     } catch (err) {
       console.error('Erro ao buscar clientes', err);
@@ -276,10 +272,9 @@ export function KanbanPage() {
     );
 
     try {
-      await axios.patch(
-        `http://localhost:3001/api/clientes/${clienteId}`,
-        { status_funil: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.patch(
+        `/clientes/${clienteId}`,
+        { status_funil: newStatus }
       );
     } catch (err) {
       console.error('Erro ao mover cliente', err);
@@ -289,11 +284,7 @@ export function KanbanPage() {
 
   const handleDispatch = async (clienteId: string) => {
     try {
-      await axios.post(
-        'http://localhost:3001/api/dispatch',
-        { cliente_id: clienteId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/dispatch', { cliente_id: clienteId });
       alert('Disparo enviado com sucesso!');
     } catch (err: any) {
       alert(err.response?.data?.error || 'Erro ao disparar');

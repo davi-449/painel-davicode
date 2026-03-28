@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, Loader2, Phone, Mail, User, Tag, MessageSquare } from 'lucide-react';
 
@@ -12,7 +11,6 @@ interface Plano {
 }
 
 export function NovoLead() {
-  const { token } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -28,16 +26,14 @@ export function NovoLead() {
   useEffect(() => {
     const fetchPlanos = async () => {
       try {
-        const { data } = await axios.get('http://localhost:3001/api/planos', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const { data } = await api.get('/planos');
         setPlanos(data.filter((p: Plano) => p.ativo));
       } catch (err) {
         console.error('Erro ao buscar planos', err);
       }
     };
-    if (token) fetchPlanos();
-  }, [token]);
+    fetchPlanos();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -48,9 +44,7 @@ export function NovoLead() {
     if (!form.nome || !form.telefone) return;
     setLoading(true);
     try {
-      await axios.post('http://localhost:3001/api/clientes', form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post('/clientes', form);
       navigate('/clientes');
     } catch (err) {
       console.error('Erro ao criar lead', err);

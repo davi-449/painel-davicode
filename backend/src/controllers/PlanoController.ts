@@ -52,5 +52,15 @@ export const PlanoController = {
     } catch (error) {
       res.status(500).json({ error: 'Erro ao alterar status do plano' });
     }
+  },
+
+  async delete(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    try {
+      await prisma.planos.delete({ where: { id } });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao excluir plano' });
+    }
   }
 };

@@ -9,5 +9,6 @@ router.get('/', PlanoController.getAll);
 router.post('/', PlanoController.create);
 router.patch('/:id', PlanoController.update);
 router.patch('/:id/toggle', PlanoController.toggleActive);
+router.delete('/:id', PlanoController.delete);
 
 export default router;

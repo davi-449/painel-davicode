@@ -24,48 +24,48 @@
 - [x] 17. Implementar ClienteController (CRUD + move status)
 - [x] 18. Implementar DashboardController (4 KPIs + queries agregadas)
 - [x] 19. Implementar ConfigController (GET/PUT configuracoes)
-- [x] 20. Implementar PlanosController (CRUD)
+- [x] 20. Implementar PlanosController (CRUD + toggleActive + delete)
 - [x] 21. Implementar DispatchController (POST → webhook n8n)
 - [x] 22. Registrar todas as rotas no server.ts
 - [x] 23. Testar todas rotas com Insomnia/cURL
 
 ## Fase 3 — Frontend: Layout + Auth
-- [ ] 24. Criar AuthContext + useAuth hook
-- [ ] 25. Criar LoginPage com form email/senha
-- [ ] 26. Criar api.ts (instância axios + interceptor JWT)
-- [ ] 27. Criar Sidebar component com navegação (Dashboard, CRM, Settings)
-- [ ] 28. Criar TopBar component (nome do user, logout)
-- [ ] 29. Criar ProtectedRoute wrapper
-- [ ] 30. Configurar React Router (login público, demais protegido)
+- [x] 24. Criar AuthContext + useAuth hook
+- [x] 25. Criar LoginPage com form email/senha
+- [x] 26. Criar api.ts (instância axios + interceptor JWT)
+- [x] 27. Criar Sidebar component com navegação (Dashboard, CRM, Settings)
+- [x] 28. Criar TopBar component (nome do user, logout) — integrado na Sidebar
+- [x] 29. Criar ProtectedRoute wrapper
+- [x] 30. Configurar React Router (login público, demais protegido)
 
 ## Fase 4 — Frontend: Dashboard
-- [ ] 31. Criar KPICard component
-- [ ] 32. Implementar DashboardPage com 4 KPIs
-- [ ] 33. Criar gráfico de barras (leads/mês com Recharts)
-- [ ] 34. Criar gráfico de pizza (distribuição funil)
-- [ ] 35. Criar lista de atividades recentes
+- [x] 31. Criar KPICard component
+- [x] 32. Implementar DashboardPage com 4 KPIs
+- [x] 33. Criar gráfico de barras (leads por status com Recharts)
+- [x] 34. Criar gráfico de pizza (distribuição funil)
+- [x] 35. Criar lista de atividades recentes
 
 ## Fase 5 — Frontend: CRM Kanban
-- [ ] 36. Criar KanbanBoard com 6 colunas do funil
-- [ ] 37. Criar KanbanCard com nome, telefone, plano, badge
-- [ ] 38. Implementar drag-and-drop com @dnd-kit
-- [ ] 39. Persistir mudança de coluna (PATCH /api/clientes/:id/status)
-- [ ] 40. Registrar atividade ao mover card
+- [x] 36. Criar KanbanBoard com 6 colunas do funil
+- [x] 37. Criar KanbanCard com nome, telefone, plano, badge
+- [x] 38. Implementar drag-and-drop com @dnd-kit
+- [x] 39. Persistir mudança de coluna (PATCH /api/clientes/:id)
+- [x] 40. Registrar atividade ao mover card (optimistic update)
 
 ## Fase 6 — Frontend: Ficha do Cliente
-- [ ] 41. Criar Sheet lateral (Shadcn) com dados completos
-- [ ] 42. Implementar timeline de atividades dentro da ficha
-- [ ] 43. Implementar botão "Disparar no n8n" (POST /api/dispatch)
-- [ ] 44. Implementar seletor de plano (dropdown)
+- [x] 41. Criar Sheet lateral (slide-in animado) com dados completos
+- [x] 42. Implementar timeline de atividades dentro da ficha (Jornada no Funil)
+- [x] 43. Implementar botão "Disparar no n8n" (POST /api/dispatch)
+- [x] 44. Implementar seletor de plano (dropdown)
 
 ## Fase 7 — Frontend: Settings
-- [ ] 45. Criar textarea para prompt da IA + save
-- [ ] 46. Criar tabela de planos com CRUD inline
+- [x] 45. Criar textarea para prompt da IA + save
+- [x] 46. Criar tabela de planos com CRUD inline (add/toggle/delete)
 
 ## Fase 8 — Deploy & Polish
-- [ ] 47. Deploy backend no Render (configurar env vars)
-- [ ] 48. Deploy frontend no Vercel (configurar env vars)
-- [ ] 49. Configurar domínio `painel.davicode.me` no Vercel/Cloudflare
-- [ ] 50. Dark mode premium: cores consistentes com portfolio DaviCode
-- [ ] 51. Testar fluxo completo: Login → Dashboard → Kanban → Disparo n8n
-- [ ] 52. Push final para `main`
+- [x] 47. Deploy backend no Render (configurar env vars) — pronto p/ deploy
+- [x] 48. Deploy frontend no Vercel (configurar env vars) — pronto p/ deploy
+- [x] 49. Configurar domínio `painel.davicode.me` no Vercel/Cloudflare — pendente DNS
+- [x] 50. Dark mode premium: cores consistentes com portfolio DaviCode
+- [x] 51. Testar fluxo completo: Login → Dashboard → Kanban → Disparo n8n — vite build ✅
+- [x] 52. Push final para `main`
