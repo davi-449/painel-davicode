@@ -1,12 +1,12 @@
 generator client {
-  provider        = "prisma-client"
-  output          = "../node_modules/.prisma/client"
-  previewFeatures = ["partialIndexes"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model clientes_crm {
@@ -114,7 +114,8 @@ model solicitacoes_login {
   delivered_at         DateTime? @db.Timestamptz(6)
   admin_telefone       String?
 
-  @@unique([telefone_cliente, status], map: "unique_pending_per_client", where: raw("((status)::text = 'PENDENTE'::text)"))
+  @@index([telefone_cliente, status], map: "unique_pending_per_client")
+
   @@index([id_curto, status], map: "idx_id_curto_status")
   @@index([status, created_at], map: "idx_status_created")
   @@index([telefone_cliente], map: "idx_telefone_cliente")

@@ -6,9 +6,8 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": ".",
-    "outDir": "./dist",
-    "resolveJsonModule": true
+    "rootDir": "./src",
+    "outDir": "./dist"
   },
-  "include": ["src/**/*", "generated/**/*"]
+  "include": ["src/**/*"]
 }
