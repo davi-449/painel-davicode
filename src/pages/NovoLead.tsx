@@ -44,7 +44,8 @@ export function NovoLead() {
     if (!form.nome || !form.telefone) return;
     setLoading(true);
     try {
-      await api.post('/clientes', form);
+      const payload = { ...form, plano_id: form.plano_id || null };
+      await api.post('/clientes', payload);
       navigate('/clientes');
     } catch (err) {
       console.error('Erro ao criar lead', err);

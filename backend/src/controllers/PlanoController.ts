@@ -1,41 +1,50 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../prismaClient';
 
 export const PlanoController = {
-  async getAll(req: Request, res: Response): Promise<void> {
+  async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const planos = await prisma.planos.findMany({
         orderBy: { created_at: 'desc' }
       });
       res.json(planos);
     } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar planos' });
+      next(error);
     }
   },
   
-  async create(req: Request, res: Response): Promise<void> {
+  async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const plano = await prisma.planos.create({ data: req.body });
+      const data = req.body;
+      // Coerce valor_mensal to number to avoid Decimal parse errors
+      if (data.valor_mensal !== undefined) {
+        data.valor_mensal = parseFloat(data.valor_mensal);
+      }
+      const plano = await prisma.planos.create({ data });
       res.status(201).json(plano);
     } catch (error) {
-      res.status(500).json({ error: 'Erro ao criar plano' });
+      next(error);
     }
   },
 
-  async update(req: Request, res: Response): Promise<void> {
+  async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
     try {
+      const data = req.body;
+      if (data.valor_mensal !== undefined) {
+        data.valor_mensal = parseFloat(data.valor_mensal);
+      }
       const plano = await prisma.planos.update({
         where: { id },
-        data: req.body
+        data
       });
       res.json(plano);
     } catch (error) {
-      res.status(500).json({ error: 'Erro ao atualizar plano' });
+      next(error);
     }
   },
 
-  async toggleActive(req: Request, res: Response): Promise<void> {
+  async toggleActive(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
     try {
       const plano = await prisma.planos.findUnique({ where: { id }});
@@ -50,17 +59,17 @@ export const PlanoController = {
       });
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: 'Erro ao alterar status do plano' });
+      next(error);
     }
   },
 
-  async delete(req: Request, res: Response): Promise<void> {
+  async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
     try {
       await prisma.planos.delete({ where: { id } });
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ error: 'Erro ao excluir plano' });
+      next(error);
     }
   }
 };

@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../prismaClient';
 
 export const DashboardController = {
-  async getMetrics(req: Request, res: Response): Promise<void> {
+  async getMetrics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Total Leads
       const totalLeads = await prisma.clientes_crm.count();
@@ -37,7 +37,7 @@ export const DashboardController = {
         atividadesHoje,
       });
     } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar metricas de dashboard' });
+      next(error);
     }
   }
 };

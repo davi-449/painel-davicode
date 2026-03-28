@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import { prisma } from '../prismaClient';
 
 export const DispatchController = {
-  async dispatchN8N(req: Request, res: Response): Promise<void> {
+  async dispatchN8N(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { cliente_id } = req.body;
 
     if (!cliente_id) {
@@ -65,8 +65,8 @@ export const DispatchController = {
 
       res.json({ success: true, message: 'Disparo enviado com sucesso' });
     } catch (error: any) {
-      console.error('Erro no dispatch:', error.message);
-      res.status(500).json({ error: 'Erro ao disparar webhook para n8n' });
+      console.error('[Dispatch ERROR]', error.message);
+      next(error);
     }
   }
 };

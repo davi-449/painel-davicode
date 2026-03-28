@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../prismaClient';
 
 export const ClienteController = {
-  async getAll(req: Request, res: Response): Promise<void> {
+  async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const clientes = await prisma.clientes_crm.findMany({
         include: { planos: true },
@@ -10,12 +10,11 @@ export const ClienteController = {
       });
       res.json(clientes);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Erro ao buscar clientes' });
+      next(error);
     }
   },
 
-  async getById(req: Request, res: Response): Promise<void> {
+  async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
     try {
       const cliente = await prisma.clientes_crm.findUnique({
@@ -31,15 +30,16 @@ export const ClienteController = {
       }
       res.json(cliente);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Erro ao buscar cliente' });
+      next(error);
     }
   },
 
-  async create(req: Request, res: Response): Promise<void> {
+  async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = req.body;
       if (!data.status_funil) data.status_funil = 'NOVO';
+      // Sanitize optional UUID fields — empty string is not a valid UUID
+      if (!data.plano_id) data.plano_id = null;
       data.updated_at = new Date();
       data.created_at = new Date();
       
@@ -54,16 +54,17 @@ export const ClienteController = {
       });
 
       res.status(201).json(novoCliente);
-    } catch (error: any) {
-      console.error(error);
-      res.status(500).json({ error: 'Erro ao criar cliente' });
+    } catch (error) {
+      next(error);
     }
   },
 
-  async update(req: Request, res: Response): Promise<void> {
+  async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
     const updateData = req.body;
     updateData.updated_at = new Date();
+    // Sanitize optional UUID fields
+    if (updateData.plano_id === '') updateData.plano_id = null;
     
     try {
       const p = await prisma.clientes_crm.findUnique({where: {id}});
@@ -89,8 +90,7 @@ export const ClienteController = {
 
       res.json(updated);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Erro ao atualizar cliente' });
+      next(error);
     }
   }
 };
