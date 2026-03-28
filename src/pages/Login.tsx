@@ -22,7 +22,11 @@ export function Login() {
       login(data.token, data.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao realizar login');
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Erro ao realizar login. Verifique suas credenciais.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 
 import authRoutes from './routes/authRoutes';
 import clienteRoutes from './routes/clienteRoutes';
@@ -21,19 +22,30 @@ app.use(cors({ origin: '*' }));
 // Basic rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-  standardHeaders: true, 
-  legacyHeaders: false, 
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api', limiter);
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/clientes', clienteRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/planos', planoRoutes);
 app.use('/api/dispatch', dispatchRoutes);
+
+// Serve frontend static files (production only)
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../../dist');
+  app.use(express.static(distPath));
+
+  // SPA fallback: all non-API routes → index.html
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

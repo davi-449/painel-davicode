@@ -165,10 +165,34 @@ export function Dashboard() {
 }
 
 // ── Reusable KPI Card ─────────────────────────────
+const KPI_COLOR_MAP: Record<string, { border: string; bg: string; glow: string }> = {
+  indigo: {
+    border: 'hover:border-indigo-500/50',
+    bg: 'bg-indigo-500/10',
+    glow: 'group-hover:bg-indigo-500/20',
+  },
+  green: {
+    border: 'hover:border-green-500/50',
+    bg: 'bg-green-500/10',
+    glow: 'group-hover:bg-green-500/20',
+  },
+  purple: {
+    border: 'hover:border-purple-500/50',
+    bg: 'bg-purple-500/10',
+    glow: 'group-hover:bg-purple-500/20',
+  },
+  blue: {
+    border: 'hover:border-blue-500/50',
+    bg: 'bg-blue-500/10',
+    glow: 'group-hover:bg-blue-500/20',
+  },
+};
+
 function KPICard({ label, value, icon, color }: { label: string; value: string | number; icon: React.ReactNode; color: string }) {
+  const c = KPI_COLOR_MAP[color] ?? KPI_COLOR_MAP.indigo;
   return (
-    <div className={`bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-${color}-500/50 transition-colors`}>
-      <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-500/10 rounded-full blur-2xl group-hover:bg-${color}-500/20 transition-all`}></div>
+    <div className={`bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg relative overflow-hidden group ${c.border} transition-colors`}>
+      <div className={`absolute top-0 right-0 w-24 h-24 ${c.bg} rounded-full blur-2xl ${c.glow} transition-all`}></div>
       <div className="flex items-center justify-between relative z-10">
         <h3 className="text-zinc-400 font-medium">{label}</h3>
         {icon}
