@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import { Lock, Mail, Loader2 } from 'lucide-react';
 
 export function Login() {
@@ -18,7 +18,7 @@ export function Login() {
     setError('');
 
     try {
-      const { data } = await axios.post('http://localhost:3001/api/auth/login', { email, senha });
+      const { data } = await api.post('/auth/login', { email, senha });
       login(data.token, data.user);
       navigate('/dashboard');
     } catch (err: any) {
