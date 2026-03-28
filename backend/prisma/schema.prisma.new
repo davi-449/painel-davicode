@@ -1,0 +1,158 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model clientes_crm {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  telefone             String    @unique @db.VarChar(20)
+  nome                 String?   @db.VarChar(100)
+  email                String?   @db.VarChar(100)
+  cpf_cnpj             String?   @db.VarChar(20)
+  plano                String?   @db.VarChar(20)
+  status_funil         String?   @db.VarChar(50)
+  data_hora_followup   String?   @db.VarChar(50)
+  resumo_lead          String?
+  link_asaas           String?
+  status_pagamento     String?   @db.VarChar(50)
+  created_at           DateTime? @default(now()) @db.Timestamp(6)
+  updated_at           DateTime? @default(now()) @db.Timestamp(6)
+  id_conversa_chatwoot Int?
+  link_site            String?
+  plano_id             String?      @db.Uuid
+  proximo_followup     DateTime?    @db.Timestamptz(6)
+  origem               String?      @default("WHATSAPP_DIRETO") @db.VarChar(50)
+  planos               planos?      @relation(fields: [plano_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  atividades           atividades[]
+}
+
+model jarvis_controle_renda {
+  id               Int       @id @default(autoincrement())
+  mes_referencia   String    @db.VarChar(7)
+  ciclo_pagamento  String    @db.VarChar(10)
+  recebido         Boolean?  @default(false)
+  data_confirmacao DateTime? @db.Timestamp(6)
+
+  @@unique([mes_referencia, ciclo_pagamento])
+  @@index([mes_referencia], map: "idx_renda_mes")
+}
+
+model jarvis_ganhos {
+  id              Int       @id @default(autoincrement())
+  data            DateTime? @default(now()) @db.Timestamp(6)
+  descricao       String
+  valor           Decimal   @db.Decimal(10, 2)
+  categoria       String?   @default("Renda Principal") @db.VarChar(50)
+  telefone_origem String?   @db.VarChar(20)
+
+  @@index([data], map: "idx_ganhos_data")
+}
+
+model jarvis_gastos {
+  id              Int       @id @default(autoincrement())
+  data            DateTime? @default(now()) @db.Timestamp(6)
+  descricao       String
+  valor           Decimal   @db.Decimal(10, 2)
+  categoria       String?   @default("Geral") @db.VarChar(50)
+  telefone_origem String?   @db.VarChar(20)
+
+  @@index([data], map: "idx_gastos_data")
+}
+
+model n8n_fila_mensagens {
+  id          BigInt   @id @default(autoincrement())
+  id_mensagem String   @db.VarChar(40)
+  telefone    String   @db.VarChar(40)
+  mensagem    String
+  timestamp   DateTime @db.Timestamp(6)
+
+  @@index([telefone], map: "idx_n8n_fila_mensagens_telefone")
+}
+
+model n8n_historico_mensagens {
+  id         BigInt   @id @default(autoincrement())
+  session_id String   @db.VarChar(40)
+  message    Json
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([session_id], map: "idx_n8n_historico_mensagens_session_id")
+}
+
+model n8n_status_atendimento {
+  id                  BigInt   @id @default(autoincrement())
+  session_id          String   @unique @db.VarChar(40)
+  lock_conversa       Boolean  @default(false)
+  aguardando_followup Boolean  @default(false)
+  numero_followup     Int      @default(0)
+  updated_at          DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([aguardando_followup], map: "idx_n8n_status_atendimento_aguardando_followup")
+  @@index([session_id], map: "idx_n8n_status_atendimento_session_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model solicitacoes_login {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_curto             Int       @default(autoincrement())
+  telefone_cliente     String
+  nome_cliente         String
+  id_conversa_chatwoot Int
+  tipo                 String    @db.VarChar(20)
+  status               String    @default("PENDENTE") @db.VarChar(20)
+  login_gerado         String?
+  senha_gerada         String?
+  created_at           DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime? @default(now()) @db.Timestamptz(6)
+  approved_at          DateTime? @db.Timestamptz(6)
+  delivered_at         DateTime? @db.Timestamptz(6)
+  admin_telefone       String?
+
+  @@unique([telefone_cliente, status], map: "unique_pending_per_client", where: raw("((status)::text = 'PENDENTE'::text)"))
+  @@index([id_curto, status], map: "idx_id_curto_status")
+  @@index([status, created_at], map: "idx_status_created")
+  @@index([telefone_cliente], map: "idx_telefone_cliente")
+}
+
+model planos {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome         String
+  tipo         String         @db.VarChar(20)
+  valor_mensal Decimal        @db.Decimal(10, 2)
+  ativo        Boolean        @default(true)
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  clientes     clientes_crm[]
+}
+
+model atividades {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id  String       @db.Uuid
+  tipo        String       @db.VarChar(50)
+  descricao   String
+  metadata    Json?
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  cliente     clientes_crm @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+
+  @@index([cliente_id])
+}
+
+model usuarios_painel {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome       String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(255)
+  senha_hash String   @db.VarChar(255)
+  role       String   @default("ADMIN") @db.VarChar(20)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model configuracoes {
+  chave      String   @id @db.VarChar(100)
+  valor      String
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
