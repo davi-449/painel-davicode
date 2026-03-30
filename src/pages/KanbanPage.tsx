@@ -14,38 +14,9 @@ import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Loader2, Phone, Send, Eye } from 'lucide-react';
-
-// ── Types ──────────────────────────────────────────
-interface Cliente {
-  id: string;
-  nome: string;
-  telefone: string;
-  email?: string;
-  status_funil: string;
-  origem?: string;
-  planos?: { nome: string; valor_mensal: number } | null;
-  updated_at: string;
-}
-
-const COLUMNS = [
-  { id: 'NOVO', label: 'Novo', color: 'bg-blue-500', border: 'border-blue-500/30' },
-  { id: 'EM_ATENDIMENTO', label: 'Em Atendimento', color: 'bg-amber-500', border: 'border-amber-500/30' },
-  { id: 'FOLLOWUP', label: 'Follow Up', color: 'bg-purple-500', border: 'border-purple-500/30' },
-  { id: 'PROPOSTA_ENVIADA', label: 'Proposta', color: 'bg-cyan-500', border: 'border-cyan-500/30' },
-  { id: 'AGUARDANDO_PAGAMENTO', label: 'Pagamento', color: 'bg-yellow-500', border: 'border-yellow-500/30' },
-  { id: 'FECHADO', label: 'Fechado', color: 'bg-green-500', border: 'border-green-500/30' },
-  { id: 'PERDIDO', label: 'Perdido', color: 'bg-red-500', border: 'border-red-500/30' },
-];
-
-export const normalizeStatus = (status?: string | null): string => {
-  if (!status) return 'NOVO';
-  const s = status.toUpperCase().trim();
-  if (s === 'EM ATENDIMENTO' || s === 'EM_ATENDIMENTO') return 'EM_ATENDIMENTO';
-  if (s === 'FOLLOW UP' || s === 'FOLLOW_UP' || s === 'FOLLOWUP') return 'FOLLOWUP';
-  if (s === 'PROPOSTA' || s === 'PROPOSTA ENVIADA' || s === 'PROPOSTA_ENVIADA') return 'PROPOSTA_ENVIADA';
-  if (s === 'PAGAMENTO' || s === 'AGUARDANDO PAGAMENTO' || s === 'AGUARDANDO_PAGAMENTO') return 'AGUARDANDO_PAGAMENTO';
-  return s.replace(/\s+/g, '_');
-};
+import { COLUMNS, normalizeStatus } from '../utils/status';
+import { LeadDrawer, type Cliente } from '../components/LeadDrawer';
+import { toast } from '../hooks/useToast';
 
 // ── Droppable Column ──────────────────────────────
 function KanbanColumn({ id, label, color, border, children, count }: {
@@ -110,7 +81,7 @@ function KanbanCard({ cliente, onView, onDispatch }: {
         </span>
       )}
       {/* Action buttons on hover */}
-      <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-1 mt-2 transition-opacity">
         <button
           onClick={(e) => { e.stopPropagation(); onView(cliente); }}
           onPointerDown={(e) => e.stopPropagation()}
@@ -127,107 +98,6 @@ function KanbanCard({ cliente, onView, onDispatch }: {
         >
           <Send className="h-3.5 w-3.5" />
         </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Client Detail Sheet ───────────────────────────
-function ClienteSheet({ cliente, onClose, onDispatch }: { 
-  cliente: Cliente | null; onClose: () => void; onDispatch: (id: string) => void;
-}) {
-  if (!cliente) return null;
-
-  const normalizedStatus = normalizeStatus(cliente.status_funil);
-  const statusIndex = COLUMNS.findIndex((c) => c.id === normalizedStatus);
-
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-zinc-900 border-l border-zinc-800 h-full overflow-y-auto shadow-2xl animate-slide-in flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-zinc-800">
-          <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white text-xl">✕</button>
-          <h3 className="text-xl font-bold text-white">{cliente.nome}</h3>
-          <p className="text-sm text-zinc-500 mt-1">{cliente.email || 'Sem email'}</p>
-        </div>
-
-        {/* Info */}
-        <div className="p-6 space-y-3 text-sm border-b border-zinc-800">
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Telefone</span>
-            <a href={`https://wa.me/55${cliente.telefone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
-               className="text-green-400 font-mono hover:underline flex items-center gap-1">
-              <Phone className="h-3 w-3" /> {cliente.telefone}
-            </a>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Status</span>
-            <span className="text-indigo-400 font-medium">{COLUMNS.find(c => c.id === normalizedStatus)?.label || normalizedStatus}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Plano</span>
-            <span className="text-white">{cliente.planos?.nome || '—'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Origem</span>
-            <span className="text-white">{cliente.origem || '—'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Última atualização</span>
-            <span className="text-white text-xs">{new Date(cliente.updated_at).toLocaleString('pt-BR')}</span>
-          </div>
-        </div>
-
-        {/* Funnel Timeline */}
-        <div className="p-6 flex-1">
-          <h4 className="text-sm font-semibold text-zinc-300 mb-4">Jornada no Funil</h4>
-          <div className="space-y-0">
-            {COLUMNS.map((col, idx) => {
-              const isPast = idx < statusIndex;
-              const isCurrent = idx === statusIndex;
-              return (
-                <div key={col.id} className="flex items-start gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-3 h-3 rounded-full border-2 ${
-                      isCurrent ? `${col.color} border-transparent ring-2 ring-offset-1 ring-offset-zinc-900 ring-indigo-500` :
-                      isPast ? 'bg-zinc-600 border-zinc-600' :
-                      'bg-transparent border-zinc-700'
-                    }`} />
-                    {idx < COLUMNS.length - 1 && (
-                      <div className={`w-0.5 h-6 ${isPast || isCurrent ? 'bg-zinc-600' : 'bg-zinc-800'}`} />
-                    )}
-                  </div>
-                  <p className={`text-sm pb-4 -mt-0.5 ${
-                    isCurrent ? 'text-white font-semibold' :
-                    isPast ? 'text-zinc-500' :
-                    'text-zinc-700'
-                  }`}>
-                    {col.label} {isCurrent && '←'}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="p-6 border-t border-zinc-800 flex gap-3">
-          <a
-            href={`https://wa.me/55${cliente.telefone.replace(/\D/g, '')}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white transition-colors"
-          >
-            <Phone className="h-4 w-4" /> WhatsApp
-          </a>
-          <button
-            onClick={() => onDispatch(cliente.id)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
-          >
-            <Send className="h-4 w-4" /> Disparar n8n
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -250,6 +120,7 @@ export function KanbanPage() {
 
   const fetchClientes = async () => {
     try {
+      const { data } = await api.get('/clientes');
       const normalizedData = data.map((c: Cliente) => ({ ...c, status_funil: normalizeStatus(c.status_funil) }));
       setClientes(normalizedData);
     } catch (err) {
@@ -284,12 +155,10 @@ export function KanbanPage() {
     );
 
     try {
-      await api.patch(
-        `/clientes/${clienteId}`,
-        { status_funil: newStatus }
-      );
+      await api.patch(`/clientes/${clienteId}`, { status_funil: newStatus });
     } catch (err) {
       console.error('Erro ao mover cliente', err);
+      toast.error('Erro ao mover lead. A página será atualizada.');
       fetchClientes(); // Rollback
     }
   };
@@ -297,10 +166,18 @@ export function KanbanPage() {
   const handleDispatch = async (clienteId: string) => {
     try {
       await api.post('/dispatch', { cliente_id: clienteId });
-      alert('Disparo enviado com sucesso!');
+      toast.success('Disparo enviado com sucesso!');
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Erro ao disparar');
+      toast.error(err.response?.data?.error || 'Erro ao disparar no n8n');
     }
+  };
+
+  const handleUpdated = (updated: Cliente) => {
+    setClientes((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated, status_funil: normalizeStatus(updated.status_funil) } : c)));
+  };
+
+  const handleDeleted = (id: string) => {
+    setClientes((prev) => prev.filter((c) => c.id !== id));
   };
 
   if (loading) {
@@ -355,7 +232,12 @@ export function KanbanPage() {
         </DragOverlay>
       </DndContext>
 
-      <ClienteSheet cliente={selectedCliente} onClose={() => setSelectedCliente(null)} onDispatch={handleDispatch} />
+      <LeadDrawer 
+        cliente={selectedCliente} 
+        onClose={() => setSelectedCliente(null)} 
+        onUpdated={handleUpdated}
+        onDeleted={handleDeleted}
+      />
     </div>
   );
 }

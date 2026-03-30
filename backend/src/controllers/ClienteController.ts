@@ -92,5 +92,33 @@ export const ClienteController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const { id } = req.params;
+    try {
+      const existing = await prisma.clientes_crm.findUnique({ where: { id } });
+      if (!existing) {
+        res.status(404).json({ error: 'Cliente não encontrado' });
+        return;
+      }
+      await prisma.clientes_crm.delete({ where: { id } });
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async addAtividade(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const { id } = req.params;
+    const { tipo, descricao } = req.body;
+    try {
+      const atividade = await prisma.atividades.create({
+        data: { cliente_id: id, tipo: tipo || 'NOTA', descricao }
+      });
+      res.status(201).json(atividade);
+    } catch (error) {
+      next(error);
+    }
   }
 };
