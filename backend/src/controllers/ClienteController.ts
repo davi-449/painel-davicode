@@ -38,7 +38,7 @@ export const ClienteController = {
     try {
       const body = req.body;
       // Map frontend field name 'observacoes' to schema field 'resumo_lead'
-      const data: Record<string, unknown> = {
+      const data: any = {
         nome: body.nome,
         telefone: body.telefone,
         email: body.email || null,
@@ -71,7 +71,7 @@ export const ClienteController = {
     const body = req.body;
 
     // Whitelist to prevent Prisma errors from unknown fields
-    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    const updateData: any = { updated_at: new Date() };
     const allowed = ['nome','email','telefone','status_funil','plano_id','origem','resumo_lead','proximo_followup','link_asaas','link_site','status_pagamento'];
     for (const key of allowed) {
       if (key in body) updateData[key] = body[key];
