@@ -23,8 +23,9 @@ interface Cliente {
 const FUNNEL_COLORS: Record<string, string> = {
   NOVO: '#3b82f6',
   EM_ATENDIMENTO: '#f59e0b',
-  FOLLOW_UP: '#a855f7',
-  PROPOSTA: '#06b6d4',
+  FOLLOWUP: '#a855f7',
+  PROPOSTA_ENVIADA: '#06b6d4',
+  AGUARDANDO_PAGAMENTO: '#eab308',
   FECHADO: '#22c55e',
   PERDIDO: '#ef4444',
 };
@@ -32,10 +33,21 @@ const FUNNEL_COLORS: Record<string, string> = {
 const FUNNEL_LABELS: Record<string, string> = {
   NOVO: 'Novo',
   EM_ATENDIMENTO: 'Em Atendimento',
-  FOLLOW_UP: 'Follow Up',
-  PROPOSTA: 'Proposta',
+  FOLLOWUP: 'Follow Up',
+  PROPOSTA_ENVIADA: 'Proposta',
+  AGUARDANDO_PAGAMENTO: 'Pagamento',
   FECHADO: 'Fechado',
   PERDIDO: 'Perdido',
+};
+
+const normalizeStatus = (status?: string | null): string => {
+  if (!status) return 'NOVO';
+  const s = status.toUpperCase().trim();
+  if (s === 'EM ATENDIMENTO' || s === 'EM_ATENDIMENTO') return 'EM_ATENDIMENTO';
+  if (s === 'FOLLOW UP' || s === 'FOLLOW_UP' || s === 'FOLLOWUP') return 'FOLLOWUP';
+  if (s === 'PROPOSTA' || s === 'PROPOSTA ENVIADA' || s === 'PROPOSTA_ENVIADA') return 'PROPOSTA_ENVIADA';
+  if (s === 'PAGAMENTO' || s === 'AGUARDANDO PAGAMENTO' || s === 'AGUARDANDO_PAGAMENTO') return 'AGUARDANDO_PAGAMENTO';
+  return s.replace(/\s+/g, '_');
 };
 
 export function Dashboard() {
@@ -51,7 +63,11 @@ export function Dashboard() {
           api.get('/clientes'),
         ]);
         setMetrics(metricsRes.data);
-        setClientes(clientesRes.data);
+        const normalizedClientes = clientesRes.data.map((c: Cliente) => ({
+          ...c,
+          status_funil: normalizeStatus(c.status_funil)
+        }));
+        setClientes(normalizedClientes);
       } catch (error) {
         console.error('Erro ao buscar dados', error);
       } finally {

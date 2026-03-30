@@ -30,11 +30,22 @@ interface Cliente {
 const COLUMNS = [
   { id: 'NOVO', label: 'Novo', color: 'bg-blue-500', border: 'border-blue-500/30' },
   { id: 'EM_ATENDIMENTO', label: 'Em Atendimento', color: 'bg-amber-500', border: 'border-amber-500/30' },
-  { id: 'FOLLOW_UP', label: 'Follow Up', color: 'bg-purple-500', border: 'border-purple-500/30' },
-  { id: 'PROPOSTA', label: 'Proposta', color: 'bg-cyan-500', border: 'border-cyan-500/30' },
+  { id: 'FOLLOWUP', label: 'Follow Up', color: 'bg-purple-500', border: 'border-purple-500/30' },
+  { id: 'PROPOSTA_ENVIADA', label: 'Proposta', color: 'bg-cyan-500', border: 'border-cyan-500/30' },
+  { id: 'AGUARDANDO_PAGAMENTO', label: 'Pagamento', color: 'bg-yellow-500', border: 'border-yellow-500/30' },
   { id: 'FECHADO', label: 'Fechado', color: 'bg-green-500', border: 'border-green-500/30' },
   { id: 'PERDIDO', label: 'Perdido', color: 'bg-red-500', border: 'border-red-500/30' },
 ];
+
+export const normalizeStatus = (status?: string | null): string => {
+  if (!status) return 'NOVO';
+  const s = status.toUpperCase().trim();
+  if (s === 'EM ATENDIMENTO' || s === 'EM_ATENDIMENTO') return 'EM_ATENDIMENTO';
+  if (s === 'FOLLOW UP' || s === 'FOLLOW_UP' || s === 'FOLLOWUP') return 'FOLLOWUP';
+  if (s === 'PROPOSTA' || s === 'PROPOSTA ENVIADA' || s === 'PROPOSTA_ENVIADA') return 'PROPOSTA_ENVIADA';
+  if (s === 'PAGAMENTO' || s === 'AGUARDANDO PAGAMENTO' || s === 'AGUARDANDO_PAGAMENTO') return 'AGUARDANDO_PAGAMENTO';
+  return s.replace(/\s+/g, '_');
+};
 
 // ── Droppable Column ──────────────────────────────
 function KanbanColumn({ id, label, color, border, children, count }: {
@@ -127,7 +138,8 @@ function ClienteSheet({ cliente, onClose, onDispatch }: {
 }) {
   if (!cliente) return null;
 
-  const statusIndex = COLUMNS.findIndex((c) => c.id === cliente.status_funil);
+  const normalizedStatus = normalizeStatus(cliente.status_funil);
+  const statusIndex = COLUMNS.findIndex((c) => c.id === normalizedStatus);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -151,7 +163,7 @@ function ClienteSheet({ cliente, onClose, onDispatch }: {
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-400">Status</span>
-            <span className="text-indigo-400 font-medium">{COLUMNS.find(c => c.id === cliente.status_funil)?.label}</span>
+            <span className="text-indigo-400 font-medium">{COLUMNS.find(c => c.id === normalizedStatus)?.label || normalizedStatus}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-400">Plano</span>
@@ -238,8 +250,8 @@ export function KanbanPage() {
 
   const fetchClientes = async () => {
     try {
-      const { data } = await api.get('/clientes');
-      setClientes(data);
+      const normalizedData = data.map((c: Cliente) => ({ ...c, status_funil: normalizeStatus(c.status_funil) }));
+      setClientes(normalizedData);
     } catch (err) {
       console.error('Erro ao buscar clientes', err);
     } finally {
