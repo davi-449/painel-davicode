@@ -36,13 +36,20 @@ export const ClienteController = {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const data = req.body;
-      if (!data.status_funil) data.status_funil = 'NOVO';
-      // Sanitize optional UUID fields — empty string is not a valid UUID
-      if (!data.plano_id) data.plano_id = null;
-      data.updated_at = new Date();
-      data.created_at = new Date();
-      
+      const body = req.body;
+      // Map frontend field name 'observacoes' to schema field 'resumo_lead'
+      const data: Record<string, unknown> = {
+        nome: body.nome,
+        telefone: body.telefone,
+        email: body.email || null,
+        status_funil: body.status_funil || 'NOVO',
+        plano_id: body.plano_id || null,
+        origem: body.origem || 'MANUAL',
+        resumo_lead: body.resumo_lead || body.observacoes || null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
       const novoCliente = await prisma.clientes_crm.create({ data });
       
       await prisma.atividades.create({
@@ -61,10 +68,15 @@ export const ClienteController = {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
-    const updateData = req.body;
-    updateData.updated_at = new Date();
-    // Sanitize optional UUID fields
-    if (updateData.plano_id === '') updateData.plano_id = null;
+    const body = req.body;
+
+    // Whitelist to prevent Prisma errors from unknown fields
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    const allowed = ['nome','email','telefone','status_funil','plano_id','origem','resumo_lead','proximo_followup','link_asaas','link_site','status_pagamento'];
+    for (const key of allowed) {
+      if (key in body) updateData[key] = body[key];
+    }
+    if ('plano_id' in updateData && !updateData.plano_id) updateData.plano_id = null;
     
     try {
       const p = await prisma.clientes_crm.findUnique({where: {id}});
