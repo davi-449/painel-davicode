@@ -7,6 +7,7 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
 import { ConfigPage } from './pages/ConfigPage';
 import { KanbanPage } from './pages/KanbanPage';
+import { ClientesList } from './pages/ClientesList';
 import { NovoLead } from './pages/NovoLead';
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/clientes" element={<KanbanPage />} />
+              <Route path="/clientes-lista" element={<ClientesList />} />
               <Route path="/clientes/novo" element={<NovoLead />} />
               <Route path="/configuracoes" element={<ConfigPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

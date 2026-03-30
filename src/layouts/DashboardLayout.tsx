@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, Users, UserPlus, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Settings, LogOut, Menu, X, List } from 'lucide-react';
 
 export function DashboardLayout() {
   const { logout, user } = useAuth();
@@ -11,6 +11,7 @@ export function DashboardLayout() {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Leads CRM', path: '/clientes', icon: Users },
+    { name: 'Todos os Leads', path: '/clientes-lista', icon: List },
     { name: 'Novo Lead', path: '/clientes/novo', icon: UserPlus },
     { name: 'Configurações', path: '/configuracoes', icon: Settings },
   ];
