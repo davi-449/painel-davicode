@@ -2,6 +2,43 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../prismaClient';
 
 export const ClienteController = {
+  async search(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const q = req.query.q as string;
+      if (!q || q.length < 2) {
+        res.json([]);
+        return;
+      }
+      const clientes = await prisma.clientes_crm.findMany({
+        where: {
+          OR: [
+            { nome: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { telefone: { contains: q } }
+          ]
+        },
+        include: { planos: true },
+        take: 10
+      });
+      res.json(clientes);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getAtividades(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const { id } = req.params;
+    try {
+      const atividades = await prisma.atividades.findMany({
+        where: { cliente_id: id },
+        orderBy: { created_at: 'desc' }
+      });
+      res.json(atividades);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const clientes = await prisma.clientes_crm.findMany({

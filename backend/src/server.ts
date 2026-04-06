@@ -11,6 +11,7 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import configRoutes from './routes/configRoutes';
 import planoRoutes from './routes/planoRoutes';
 import dispatchRoutes from './routes/dispatchRoutes';
+import financasRoutes from './routes/financasRoutes';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/planos', planoRoutes);
 app.use('/api/dispatch', dispatchRoutes);
+app.use('/api/financas', financasRoutes);
 
 // Serve frontend static files (production only)
 if (process.env.NODE_ENV === 'production') {
