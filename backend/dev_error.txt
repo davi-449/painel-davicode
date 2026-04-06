@@ -1,0 +1,5 @@
+
+> backend@1.0.0 dev
+> tsx watch src/server.ts
+
+[server]: Server is running at http://localhost:3001

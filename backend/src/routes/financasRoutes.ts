@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { getResumoFinancas } from '../controllers/financasController';
+import { FinancasController } from '../controllers/financasController';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/resumo', getResumoFinancas);
+router.get('/resumo', FinancasController.getResumo);
 
 export default router;
