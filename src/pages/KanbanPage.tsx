@@ -19,7 +19,7 @@ import { useToast } from '../hooks/useToast';
 import { SkeletonKanban } from '../components/ui/SkeletonKanban';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { cn } from '../lib/utils';
-import { ActivityTimeline, Activity } from '../components/ui/ActivityTimeline';
+import { ActivityTimeline, type Activity } from '../components/ui/ActivityTimeline';
 
 // ── Types ──────────────────────────────────────────
 export interface Cliente {
@@ -43,7 +43,7 @@ const COLUMNS = [
 ];
 
 // ── Droppable Column ──────────────────────────────
-function KanbanColumn({ id, label, gradient, ring, children, count }: {
+function KanbanColumn({ id, label, ring, children, count }: {
   id: string; label: string; gradient: string; ring: string; children: React.ReactNode; count: number;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id });

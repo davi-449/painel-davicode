@@ -1,6 +1,4 @@
-import React from 'react';
 import { Clock, MessageCircle, FileText, CheckCircle2, UserPlus, PhoneCall, Bot } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 export interface Activity {
   id: string;
@@ -80,7 +78,7 @@ export function ActivityTimeline({ activities, isLoading }: ActivityTimelineProp
 
   return (
     <div className="relative border-l border-white/[0.08] ml-4 space-y-8 pb-4">
-      {activities.map((activity, idx) => (
+      {activities.map((activity) => (
         <div key={activity.id} className="relative pl-6 group">
           {/* Icon node */}
           <div className="absolute -left-4 top-0 w-8 h-8 rounded-full bg-[#16203A] border border-white/[0.1] flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:border-white/[0.2] transition-transform">

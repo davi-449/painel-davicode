@@ -1,15 +1,14 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, UserPlus, Settings, LogOut, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 
 interface SidebarProps {
-  mobileMenuOpen: boolean;
-  setMobileMenuOpen: (val: boolean) => void;
+  mobileMenuOpen?: boolean;
+  setMobileMenuOpen?: (val: boolean) => void;
 }
 
-export function Sidebar({ mobileMenuOpen, setMobileMenuOpen }: SidebarProps) {
+export function Sidebar({ mobileMenuOpen = false, setMobileMenuOpen = () => {} }: SidebarProps) {
   const { logout, user } = useAuth();
   const location = useLocation();
 

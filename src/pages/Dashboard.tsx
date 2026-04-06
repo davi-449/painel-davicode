@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
-import { Users, CreditCard, DollarSign, Activity as ActivityIcon } from 'lucide-react';
+import { Users, DollarSign, Activity as ActivityIcon } from 'lucide-react';
 import { FunnelBarChart } from '../components/charts/FunnelBarChart';
 import { FunnelPieChart } from '../components/charts/FunnelPieChart';
 import { SkeletonCard } from '../components/ui/SkeletonCard';
-import { ActivityTimeline, Activity } from '../components/ui/ActivityTimeline';
-import { StatusBadge, FunnelStatus } from '../components/ui/StatusBadge';
+import { ActivityTimeline, type Activity } from '../components/ui/ActivityTimeline';
 import { FinanceKPI } from '../components/ui/FinanceKPI';
 import { cn } from '../lib/utils';
 
