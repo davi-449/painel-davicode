@@ -4,7 +4,7 @@ export type FunnelStatus =
   | 'NOVO' 
   | 'EM_ATENDIMENTO' 
   | 'FOLLOW_UP' 
-  | 'PROPOSTA' 
+  | 'PROPOSTA_ENVIADA' 
   | 'FECHADO' 
   | 'PERDIDO';
 
@@ -22,7 +22,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
       case 'FOLLOW_UP':
         return 'text-violet-400 bg-violet-500/10 border-violet-500/20';
-      case 'PROPOSTA':
+      case 'PROPOSTA_ENVIADA':
         return 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
       case 'FECHADO':
         return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
