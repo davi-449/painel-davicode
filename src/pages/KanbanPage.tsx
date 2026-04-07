@@ -21,6 +21,7 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { cn } from '../lib/utils';
 import { ActivityTimeline, type Activity } from '../components/ui/ActivityTimeline';
 import { EditClienteModal } from '../components/ui/EditClienteModal';
+import { ModalVendaGanha, ModalVendaPerdida } from '../components/ui/ModalFechamento';
 
 // ── Types ──────────────────────────────────────────
 export interface Cliente {
@@ -282,6 +283,7 @@ export function KanbanPage() {
   const { clientes, loading, isRealtimeConnected, updateClienteStatus } = useClientes();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string, newStatus: string } | null>(null);
   
   const { success, error } = useToast();
   const location = useLocation();
@@ -321,6 +323,11 @@ export function KanbanPage() {
 
     const cliente = clientes.find((c) => c.id === clienteId);
     if (!cliente || cliente.status_funil === newStatus) return;
+
+    if (newStatus === 'FECHADO' || newStatus === 'PERDIDO') {
+      setPendingStatusChange({ id: clienteId, newStatus });
+      return;
+    }
 
     const successUpdate = await updateClienteStatus(clienteId, newStatus);
     if (successUpdate) {
@@ -403,6 +410,30 @@ export function KanbanPage() {
         onClose={() => setSelectedCliente(null)} 
         onDispatch={(id, e) => handleDispatch(id, e)} 
       />
+
+      {pendingStatusChange?.newStatus === 'FECHADO' && clientes.find(c => c.id === pendingStatusChange.id) && (
+        <ModalVendaGanha
+          cliente={clientes.find(c => c.id === pendingStatusChange.id)!}
+          onClose={() => setPendingStatusChange(null)}
+          onSubmit={async (data) => {
+            const successUpdate = await updateClienteStatus(pendingStatusChange.id, pendingStatusChange.newStatus, data);
+            if (successUpdate) success('Status atualizado', 'Venda fechada com sucesso!');
+            setPendingStatusChange(null);
+          }}
+        />
+      )}
+      
+      {pendingStatusChange?.newStatus === 'PERDIDO' && clientes.find(c => c.id === pendingStatusChange.id) && (
+        <ModalVendaPerdida
+          cliente={clientes.find(c => c.id === pendingStatusChange.id)!}
+          onClose={() => setPendingStatusChange(null)}
+          onSubmit={async (data) => {
+            const successUpdate = await updateClienteStatus(pendingStatusChange.id, pendingStatusChange.newStatus, data);
+            if (successUpdate) success('Status atualizado', 'Venda dada como perdida.');
+            setPendingStatusChange(null);
+          }}
+        />
+      )}
     </div>
   );
 }

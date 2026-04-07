@@ -12,6 +12,8 @@ import { ConfigPage } from './pages/ConfigPage';
 import { KanbanPage } from './pages/KanbanPage';
 import { NovoLead } from './pages/NovoLead';
 import { FinancasPage } from './pages/FinancasPage';
+import { ClientesListaPage } from './pages/ClientesListaPage';
+import { N8nToolsPage } from './pages/N8nToolsPage';
 
 export function App() {
   return (
@@ -29,9 +31,11 @@ export function App() {
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
                 <Route path="/clientes" element={<ErrorBoundary><KanbanPage /></ErrorBoundary>} />
+                <Route path="/clientes/lista" element={<ErrorBoundary><ClientesListaPage /></ErrorBoundary>} />
                 <Route path="/clientes/novo" element={<ErrorBoundary><NovoLead /></ErrorBoundary>} />
                 <Route path="/configuracoes" element={<ErrorBoundary><ConfigPage /></ErrorBoundary>} />
                 <Route path="/financas" element={<ErrorBoundary><FinancasPage /></ErrorBoundary>} />
+                <Route path="/n8n-tools" element={<ErrorBoundary><N8nToolsPage /></ErrorBoundary>} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </Route>

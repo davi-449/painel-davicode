@@ -39,6 +39,10 @@ export function useClientes() {
           status_funil,
           origem,
           updated_at,
+          valor_contrato,
+          tempo_contrato_meses,
+          data_vencimento,
+          motivo_perda,
           planos (
             nome,
             valor_mensal
@@ -95,15 +99,15 @@ export function useClientes() {
     };
   }, []);
 
-  const updateClienteStatus = async (id: string, newStatus: string) => {
+  const updateClienteStatus = async (id: string, newStatus: string, extraData?: Record<string, any>) => {
     // Optimistic update
     const previousClientes = [...clientes];
-    setClientes((prev) => prev.map((c) => (c.id === id ? { ...c, status_funil: newStatus } : c)));
+    setClientes((prev) => prev.map((c) => (c.id === id ? { ...c, status_funil: newStatus, ...extraData } : c)));
 
     try {
       const { error: patchError } = await supabase
         .from('clientes_crm')
-        .update({ status_funil: newStatus })
+        .update({ status_funil: newStatus, ...extraData })
         .eq('id', id);
 
       if (patchError) throw patchError;

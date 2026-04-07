@@ -15,8 +15,10 @@ export function Sidebar({ mobileMenuOpen = false, setMobileMenuOpen = () => {} }
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Finanças', path: '/financas', icon: TrendingUp },
-    { name: 'Leads CRM', path: '/clientes', icon: Users, exact: true },
+    { name: 'Kanban CRM', path: '/clientes', icon: Users, exact: true },
+    { name: 'Lista de Contatos', path: '/clientes/lista', icon: Users, exact: true },
     { name: 'Novo Lead', path: '/clientes/novo', icon: UserPlus },
+    { name: 'Ferramentas de IA', path: '/n8n-tools', icon: Settings }, // Settings but maybe Bot icon? Let's import Bot if needed, but for now Settings
     { name: 'Configurações', path: '/configuracoes', icon: Settings },
   ];
 
