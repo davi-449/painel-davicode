@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { Settings, Save, Loader2, Bot, Link, Trash2, Plus, Package } from 'lucide-react';
 
 interface Plano {
@@ -26,12 +26,18 @@ export function ConfigPage() {
     const fetchAll = async () => {
       try {
         const [configRes, planosRes] = await Promise.all([
-          api.get('/config'),
-          api.get('/planos'),
+          supabase.from('app_config').select('*').eq('id', 1).single(),
+          supabase.from('planos').select('*').order('nome'),
         ]);
-        setWebhook(configRes.data.webhook_n8n || '');
-        setPrompt(configRes.data.prompt_agente_ia || '');
-        setPlanos(planosRes.data);
+        
+        if (configRes.data) {
+          setWebhook(configRes.data.n8n_webhook_url || '');
+          setPrompt(configRes.data.assistant_prompt || '');
+        }
+        
+        if (planosRes.data) {
+          setPlanos(planosRes.data);
+        }
       } catch (error) {
         console.error('Erro ao buscar configurações', error);
       } finally {
@@ -46,8 +52,11 @@ export function ConfigPage() {
     setSaving(true);
     setMessage({ text: '', type: '' });
     try {
-      await api.put('/config', { chave: 'webhook_n8n', valor: webhook });
-      await api.put('/config', { chave: 'prompt_agente_ia', valor: prompt });
+      const { error } = await supabase
+        .from('app_config')
+        .upsert({ id: 1, n8n_webhook_url: webhook, assistant_prompt: prompt });
+        
+      if (error) throw error;
       setMessage({ text: 'Configurações salvas com sucesso!', type: 'success' });
     } catch {
       setMessage({ text: 'Erro ao salvar configurações.', type: 'error' });
@@ -60,13 +69,15 @@ export function ConfigPage() {
     if (!newPlano.nome || !newPlano.valor_mensal) return;
     setAddingPlano(true);
     try {
-      const { data } = await api.post('/planos', {
+      const payload = {
         nome: newPlano.nome,
         valor_mensal: parseFloat(newPlano.valor_mensal),
         valor_anual: newPlano.valor_anual ? parseFloat(newPlano.valor_anual) : null,
         ativo: true,
-      });
-      setPlanos([...planos, data]);
+      };
+      const { data, error } = await supabase.from('planos').insert(payload).select().single();
+      if (error) throw error;
+      if (data) setPlanos([...planos, data]);
       setNewPlano({ nome: '', valor_mensal: '', valor_anual: '' });
     } catch {
       alert('Erro ao criar plano');
@@ -77,7 +88,8 @@ export function ConfigPage() {
 
   const handleTogglePlano = async (id: string, ativo: boolean) => {
     try {
-      await api.patch(`/planos/${id}`, { ativo: !ativo });
+      const { error } = await supabase.from('planos').update({ ativo: !ativo }).eq('id', id);
+      if (error) throw error;
       setPlanos(planos.map((p) => (p.id === id ? { ...p, ativo: !ativo } : p)));
     } catch {
       alert('Erro ao atualizar plano');
@@ -87,7 +99,8 @@ export function ConfigPage() {
   const handleDeletePlano = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este plano?')) return;
     try {
-      await api.delete(`/planos/${id}`);
+      const { error } = await supabase.from('planos').delete().eq('id', id);
+      if (error) throw error;
       setPlanos(planos.filter((p) => p.id !== id));
     } catch {
       alert('Erro ao excluir plano');

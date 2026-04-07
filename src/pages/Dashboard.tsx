@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import api from '../lib/api';
+import { useMetrics } from '../hooks/useMetrics';
 import { Users, DollarSign, Activity as ActivityIcon } from 'lucide-react';
 import { FunnelBarChart } from '../components/charts/FunnelBarChart';
 import { FunnelPieChart } from '../components/charts/FunnelPieChart';
@@ -8,61 +7,9 @@ import { ActivityTimeline, type Activity } from '../components/ui/ActivityTimeli
 import { FinanceKPI } from '../components/ui/FinanceKPI';
 import { cn } from '../lib/utils';
 
-interface Metrics {
-  totalLeads: number;
-  vendas: number;
-  ticketMedio: number;
-  atividadesHoje: number;
-}
-
-interface Cliente {
-  id: string;
-  nome: string;
-  status_funil: string;
-  updated_at: string;
-}
-
-const FUNNEL_COLORS: Record<string, string> = {
-  NOVO: '#60a5fa', // blue-400
-  EM_ATENDIMENTO: '#fbbf24', // amber-400
-  FOLLOW_UP: '#a78bfa', // violet-400
-  PROPOSTA: '#22d3ee', // cyan-400
-  FECHADO: '#34d399', // emerald-400
-  PERDIDO: '#fb7185', // rose-400
-};
-
-const FUNNEL_LABELS: Record<string, string> = {
-  NOVO: 'Novo',
-  EM_ATENDIMENTO: 'Em Atendimento',
-  FOLLOW_UP: 'Follow Up',
-  PROPOSTA: 'Proposta',
-  FECHADO: 'Fechado',
-  PERDIDO: 'Perdido',
-};
-
-
+import { FUNIL_STAGES } from '../constants/funil';
 export function Dashboard() {
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [metricsRes, clientesRes] = await Promise.all([
-          api.get('/dashboard/metrics'),
-          api.get('/clientes'),
-        ]);
-        setMetrics(metricsRes.data);
-        setClientes(clientesRes.data);
-      } catch (error) {
-        console.error('Erro ao buscar dados', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const { metrics, clientes, loading } = useMetrics();
 
   if (loading) {
     return (
@@ -80,10 +27,10 @@ export function Dashboard() {
   }
 
   // Build funnel distribution from real data
-  const funnelCounts = Object.keys(FUNNEL_LABELS).map((status) => ({
-    name: FUNNEL_LABELS[status],
-    value: clientes.filter((c) => c.status_funil === status).length,
-    color: FUNNEL_COLORS[status],
+  const funnelCounts = FUNIL_STAGES.map((stage) => ({
+    name: stage.label,
+    value: clientes.filter((c) => c.status_funil === stage.id).length,
+    color: stage.color,
   }));
 
   const barData = funnelCounts.map((f) => ({ name: f.name, leads: f.value, fill: f.color }));
@@ -95,7 +42,7 @@ export function Dashboard() {
     .map(c => ({
       id: c.id,
       tipo: 'status',
-      descricao: `${c.nome} foi atualizado para ${FUNNEL_LABELS[c.status_funil] || c.status_funil}`,
+      descricao: `${c.nome} foi atualizado para ${FUNIL_STAGES.find(s => s.id === c.status_funil)?.label || c.status_funil}`,
       created_at: c.updated_at
     }));
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+// import removed
 import { useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { Lock, Mail, Loader2, ArrowRight } from 'lucide-react';
 
 import { useToast } from '../hooks/useToast';
@@ -12,7 +12,7 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  // removed login from useAuth since we handle auth via supabase client
   const navigate = useNavigate();
   const { error } = useToast();
 
@@ -21,15 +21,16 @@ export function Login() {
     setLoading(true);
 
     try {
-      const { data } = await api.post('/auth/login', { email, senha });
-      login(data.token, data.user);
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
+
+      if (authError) throw authError;
+      
       navigate('/dashboard');
     } catch (err: any) {
-      const msg =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        'Erro ao realizar login. Verifique suas credenciais.';
-      error('Falha no Login', msg);
+      error('Falha no Login', err.message || 'Erro ao realizar login. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }

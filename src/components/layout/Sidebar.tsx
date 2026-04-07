@@ -74,10 +74,10 @@ export function Sidebar({ mobileMenuOpen = false, setMobileMenuOpen = () => {} }
         <div className="pt-4 border-t border-white/[0.06] mt-4 space-y-3">
           <div className="flex items-center gap-3 p-2 rounded-xl bg-black/20 border border-white/[0.05]">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center text-xs font-bold shadow-inner">
-              {getUserInitials(user?.nome)}
+              {getUserInitials(user?.user_metadata?.nome)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-200 truncate">{user?.nome || 'Usuário'}</p>
+              <p className="text-sm font-semibold text-slate-200 truncate">{user?.user_metadata?.nome || 'Usuário'}</p>
               <p className="text-xs text-slate-500 truncate">{user?.email}</p>
             </div>
           </div>

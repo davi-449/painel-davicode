@@ -3,7 +3,7 @@ import { Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from './StatusBadge';
 import { cn } from '../../lib/utils';
-import api from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 
 interface SearchResult {
   id: string;
@@ -43,8 +43,14 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
       setIsLoading(true);
       try {
-        const response = await api.get(`/clientes/search?q=${encodeURIComponent(query)}`);
-        setResults(response.data);
+        const { data, error } = await supabase
+          .from('clientes_crm')
+          .select('id, nome, telefone, status_funil')
+          .or(`nome.ilike.%${query}%,telefone.ilike.%${query}%`)
+          .limit(10);
+          
+        if (error) throw error;
+        setResults(data as SearchResult[]);
         setSelectedIndex(0);
       } catch (error) {
         console.error('Search error:', error);

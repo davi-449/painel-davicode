@@ -5,6 +5,7 @@ import { ToastContainer } from './components/ui/Toast';
 import { Login } from './pages/Login';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { Dashboard } from './pages/Dashboard';
 import { ConfigPage } from './pages/ConfigPage';
@@ -18,26 +19,28 @@ export function App() {
       <ToastProvider>
         <ToastContainer />
         <BrowserRouter>
-          <Routes>
-          {/* Public Route */}
-          <Route path="/login" element={<Login />} />
-          
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/clientes" element={<KanbanPage />} />
-              <Route path="/clientes/novo" element={<NovoLead />} />
-              <Route path="/configuracoes" element={<ConfigPage />} />
-              <Route path="/financas" element={<FinancasPage />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <ErrorBoundary>
+            <Routes>
+            {/* Public Route */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                <Route path="/clientes" element={<ErrorBoundary><KanbanPage /></ErrorBoundary>} />
+                <Route path="/clientes/novo" element={<ErrorBoundary><NovoLead /></ErrorBoundary>} />
+                <Route path="/configuracoes" element={<ErrorBoundary><ConfigPage /></ErrorBoundary>} />
+                <Route path="/financas" element={<ErrorBoundary><FinancasPage /></ErrorBoundary>} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              </Route>
             </Route>
-          </Route>
-          
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+            
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+          </ErrorBoundary>
+        </BrowserRouter>
       </ToastProvider>
     </AuthProvider>
   );

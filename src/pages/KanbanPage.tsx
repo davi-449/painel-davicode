@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import { supabase } from '../lib/supabase';
 import {
   DndContext,
   PointerSensor,
@@ -20,6 +20,7 @@ import { SkeletonKanban } from '../components/ui/SkeletonKanban';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { cn } from '../lib/utils';
 import { ActivityTimeline, type Activity } from '../components/ui/ActivityTimeline';
+import { EditClienteModal } from '../components/ui/EditClienteModal';
 
 // ── Types ──────────────────────────────────────────
 export interface Cliente {
@@ -33,15 +34,10 @@ export interface Cliente {
   updated_at: string;
 }
 
-const COLUMNS = [
-  { id: 'NOVO', label: 'Novo', gradient: 'from-blue-500/20 to-transparent', ring: 'ring-blue-500/30' },
-  { id: 'EM_ATENDIMENTO', label: 'Em Atendimento', gradient: 'from-amber-500/20 to-transparent', ring: 'ring-amber-500/30' },
-  { id: 'FOLLOW_UP', label: 'Follow Up', gradient: 'from-violet-500/20 to-transparent', ring: 'ring-violet-500/30' },
-  { id: 'PROPOSTA', label: 'Proposta', gradient: 'from-cyan-500/20 to-transparent', ring: 'ring-cyan-500/30' },
-  { id: 'FECHADO', label: 'Fechado', gradient: 'from-emerald-500/20 to-transparent', ring: 'ring-emerald-500/30' },
-  { id: 'PERDIDO', label: 'Perdido', gradient: 'from-rose-500/20 to-transparent', ring: 'ring-rose-500/30' },
-];
+import { FUNIL_STAGES } from '../constants/funil';
+import { useClientes } from '../hooks/useClientes';
 
+const COLUMNS = FUNIL_STAGES;
 // ── Droppable Column ──────────────────────────────
 function KanbanColumn({ id, label, ring, children, count }: {
   id: string; label: string; gradient: string; ring: string; children: React.ReactNode; count: number;
@@ -157,20 +153,34 @@ function KanbanCard({ cliente, onView, onDispatch }: {
   );
 }
 
-// ── Client Detail Sheet ───────────────────────────
-function ClienteSheet({ cliente, onClose, onDispatch }: { 
+function ClienteSheet({ cliente: initialCliente, onClose, onDispatch }: { 
   cliente: Cliente | null; onClose: () => void; onDispatch: (id: string, e: React.MouseEvent) => void;
 }) {
+  const [cliente, setCliente] = useState<Cliente | null>(initialCliente);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingAct, setLoadingAct] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setCliente(initialCliente);
+  }, [initialCliente]);
 
   useEffect(() => {
     if (cliente) {
       setLoadingAct(true);
-      api.get(`/clientes/${cliente.id}/atividades`)
-        .then(res => setActivities(res.data))
-        .catch(err => console.error('Error fetching activities:', err))
-        .finally(() => setLoadingAct(false));
+      supabase
+        .from('atividades')
+        .select('*')
+        .eq('cliente_id', cliente.id)
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching activities:', error);
+          } else {
+            setActivities(data as Activity[]);
+          }
+          setLoadingAct(false);
+        });
     }
   }, [cliente]);
 
@@ -245,21 +255,31 @@ function ClienteSheet({ cliente, onClose, onDispatch }: {
             <Send className="h-4 w-4" /> Disparar
           </button>
           <button
-            onClick={() => alert('Editar cliente')}
+            onClick={() => setIsEditing(true)}
             className="p-3 rounded-xl text-sm font-semibold bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 border border-white/[0.1] transition-colors"
           >
             Editar
           </button>
         </div>
       </div>
+      
+      {isEditing && cliente && (
+        <EditClienteModal
+          cliente={cliente}
+          onClose={() => setIsEditing(false)}
+          onSuccess={(updatedCliente) => {
+            setCliente(updatedCliente);
+            setIsEditing(false);
+          }}
+        />
+      )}
     </div>
   );
 }
 
 // ── Main Kanban Page ──────────────────────────────
 export function KanbanPage() {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { clientes, loading, isRealtimeConnected, updateClienteStatus } = useClientes();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   
@@ -270,10 +290,6 @@ export function KanbanPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
-
-  useEffect(() => {
-    fetchClientes();
-  }, []);
 
   // Handle openClienteId from GlobalSearch routing
   useEffect(() => {
@@ -287,17 +303,6 @@ export function KanbanPage() {
       navigate('.', { replace: true, state: {} });
     }
   }, [location.state, clientes, navigate]);
-
-  const fetchClientes = async () => {
-    try {
-      const { data } = await api.get('/clientes');
-      setClientes(data);
-    } catch (err) {
-      error('Ocorreu um erro ao buscar o Kanban');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -317,26 +322,22 @@ export function KanbanPage() {
     const cliente = clientes.find((c) => c.id === clienteId);
     if (!cliente || cliente.status_funil === newStatus) return;
 
-    setClientes((prev) =>
-      prev.map((c) => (c.id === clienteId ? { ...c, status_funil: newStatus } : c))
-    );
-
-    try {
-      await api.patch(`/clientes/${clienteId}`, { status_funil: newStatus });
+    const successUpdate = await updateClienteStatus(clienteId, newStatus);
+    if (successUpdate) {
       success('Status atualizado', `${cliente.nome} movido para ${COLUMNS.find(c => c.id === newStatus)?.label}`);
-    } catch (err) {
-      error('Falha ao mover cliente', 'A ação foi revertida.');
-      fetchClientes();
     }
   };
 
   const handleDispatch = async (clienteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.post('/dispatch', { cliente_id: clienteId });
+      const { error: err } = await supabase.functions.invoke('dispatch-n8n', {
+        body: { cliente_id: clienteId }
+      });
+      if (err) throw err;
       success('Automação disparada!', 'O ciclo do n8n foi iniciado corretamente.');
     } catch (err: any) {
-      error('Erro ao disparar automação', err.response?.data?.error || 'Erro desconhecido');
+      error('Erro ao disparar automação', err.message || 'Erro desconhecido');
     }
   };
 
@@ -345,7 +346,15 @@ export function KanbanPage() {
   return (
     <div className="h-full flex flex-col space-y-6 pt-4 animate-slide-in">
       <header>
-        <h2 className="text-3xl font-bold font-heading text-gradient w-fit mb-2">Kanban Realtime</h2>
+        <div className="flex items-center gap-3 w-fit mb-2">
+          <h2 className="text-3xl font-bold font-heading text-gradient">Kanban Realtime</h2>
+          <div className={cn("px-2 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5", 
+            isRealtimeConnected ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+          )}>
+            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isRealtimeConnected ? "bg-emerald-500" : "bg-red-500")} />
+            {isRealtimeConnected ? 'CONECTADO' : 'DESCONECTADO'}
+          </div>
+        </div>
         <p className="text-slate-400">Gerencie todos os leads arrastando entre etapas do funil.</p>
       </header>
 

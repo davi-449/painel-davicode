@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, Loader2, Phone, Mail, User, Tag, MessageSquare } from 'lucide-react';
 
@@ -26,8 +26,9 @@ export function NovoLead() {
   useEffect(() => {
     const fetchPlanos = async () => {
       try {
-        const { data } = await api.get('/planos');
-        setPlanos(data.filter((p: Plano) => p.ativo));
+        const { data, error } = await supabase.from('planos').select('*').eq('ativo', true);
+        if (error) throw error;
+        setPlanos(data as Plano[]);
       } catch (err) {
         console.error('Erro ao buscar planos', err);
       }
@@ -44,8 +45,9 @@ export function NovoLead() {
     if (!form.nome || !form.telefone) return;
     setLoading(true);
     try {
-      const payload = { ...form, plano_id: form.plano_id || null };
-      await api.post('/clientes', payload);
+      const payload = { ...form, plano_id: form.plano_id || null, status_funil: 'NOVO' };
+      const { error } = await supabase.from('clientes_crm').insert(payload);
+      if (error) throw error;
       navigate('/clientes');
     } catch (err) {
       console.error('Erro ao criar lead', err);

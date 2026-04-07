@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react';
-import api from '../lib/api';
+import { useFinancas } from '../hooks/useFinancas';
 import { FinanceKPI } from '../components/ui/FinanceKPI';
 import { Loader2 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
-interface FinanceResumo {
-  receita: { current: number; trend: number };
-  despesa: { current: number; trend: number };
-  saldo: { current: number; trend: number };
-  historico: Array<{ month: string; receita: number; despesa: number }>;
-}
+// FinanceResumo is defined in useFinancas
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -34,23 +28,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function FinancasPage() {
-  const [data, setData] = useState<FinanceResumo | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchResumo = async () => {
-      try {
-        const response = await api.get('/financas/resumo');
-        setData(response.data);
-      } catch (error) {
-        console.error('Erro ao carregar finanças:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchResumo();
-  }, []);
+  const { data, loading } = useFinancas();
 
   if (loading) {
     return (
@@ -138,19 +116,22 @@ export function FinancasPage() {
               </tr>
             </thead>
             <tbody>
-              {/* Mock data */}
-              <tr className="border-b border-white/[0.04] hover:bg-white/[0.02]">
-                  <td className="p-3"><span className="capitalize px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400">Receita</span></td>
-                  <td className="p-3 text-slate-200">Plano Mensal - Cliente Feliz</td>
-                  <td className="p-3 text-right font-mono text-slate-200">+ R$ 97,00</td>
-                  <td className="p-3 text-right text-slate-500">05/04</td>
-              </tr>
-              <tr className="border-b border-white/[0.04] hover:bg-white/[0.02]">
-                  <td className="p-3"><span className="capitalize px-2 py-0.5 rounded-full text-xs bg-rose-500/10 text-rose-400">Despesa</span></td>
-                  <td className="p-3 text-slate-200">Assinatura Figma</td>
-                  <td className="p-3 text-right font-mono text-slate-200">- R$ 80,00</td>
-                  <td className="p-3 text-right text-slate-500">04/04</td>
-              </tr>
+              {data?.lancamentos.map((lanc) => (
+                <tr key={lanc.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
+                  <td className="p-3">
+                    <span className={`capitalize px-2 py-0.5 rounded-full text-xs ${lanc.tipo === 'receita' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      {lanc.tipo}
+                    </span>
+                  </td>
+                  <td className="p-3 text-slate-200">{lanc.descricao}</td>
+                  <td className="p-3 text-right font-mono text-slate-200">
+                    {lanc.tipo === 'receita' ? '+' : '-'} {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lanc.valor)}
+                  </td>
+                  <td className="p-3 text-right text-slate-500">
+                    {new Date(lanc.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -1,52 +1,46 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-
-export interface User {
-  id: string;
-  nome: string;
-  email: string;
-  role: string;
-}
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextData {
-  user: User | null;
-  token: string | null;
-  login: (token: string, user: User) => void;
-  logout: () => void;
+  user: SupabaseUser | null;
+  loading: boolean;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('@DaviCode:token');
-    const storedUser = localStorage.getItem('@DaviCode:user');
+    let mounted = true;
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+    // SINGLE source of truth: onAuthStateChange fires INITIAL_SESSION
+    // synchronously with the persisted session — eliminates race condition.
+    // DO NOT use getSession() alongside this, as it creates concurrency bugs
+    // where setLoading(false) fires before user is populated.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = (newToken: string, loggedUser: User) => {
-    setToken(newToken);
-    setUser(loggedUser);
-    localStorage.setItem('@DaviCode:token', newToken);
-    localStorage.setItem('@DaviCode:user', JSON.stringify(loggedUser));
-  };
-
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('@DaviCode:token');
-    localStorage.removeItem('@DaviCode:user');
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, loading, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
@@ -54,5 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 }
