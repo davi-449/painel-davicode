@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useFinancas } from '../hooks/useFinancas';
 import { FinanceKPI } from '../components/ui/FinanceKPI';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 // FinanceResumo is defined in useFinancas
@@ -28,7 +29,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function FinancasPage() {
-  const { data, loading } = useFinancas();
+  const { data, loading, addLancamento, deleteLancamento } = useFinancas();
+  
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formModal, setFormModal] = useState({
+    tipo: 'receita' as 'receita' | 'despesa',
+    descricao: '',
+    valor: '',
+  });
 
   if (loading) {
     return (
@@ -38,11 +47,54 @@ export function FinancasPage() {
     );
   }
 
+  const handleOpenModal = () => {
+    setFormModal({ tipo: 'receita', descricao: '', valor: '' });
+    setShowModal(true);
+  };
+
+  const handleModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formModal.descricao || !formModal.valor) return;
+    setIsSubmitting(true);
+    try {
+      await addLancamento(formModal.tipo, formModal.descricao, Number(formModal.valor));
+      setShowModal(false);
+    } catch (err: any) {
+      alert(`Erro ao adicionar: ${err?.message || 'Verifique os dados.'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (id.startsWith('__mock__')) {
+      alert('Linhas de exemplo (mock) não podem ser excluídas. Elas sumirão sozinhas quando você cadastrar lançamentos reais.');
+      return;
+    }
+    
+    if (window.confirm('Tem certeza que deseja excluir este lançamento?')) {
+      try {
+        await deleteLancamento(id);
+      } catch (err: any) {
+        alert(`Erro ao excluir: ${err?.message || 'Tente novamente.'}`);
+      }
+    }
+  };
+
   return (
-    <div className="space-y-8 animate-slide-in" style={{ animationDuration: '300ms' }}>
-      <header>
-        <h2 className="text-3xl font-bold font-heading text-gradient w-fit mb-2 mt-4">Gestão Financeira</h2>
-        <p className="text-slate-400">Acompanhe as receitas e despesas geradas pela agência.</p>
+    <div className="space-y-8 animate-slide-in relative" style={{ animationDuration: '300ms' }}>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-4">
+        <div>
+          <h2 className="text-3xl font-bold font-heading text-gradient w-fit mb-2">Gestão Financeira</h2>
+          <p className="text-slate-400">Acompanhe as receitas e despesas geradas pela agência.</p>
+        </div>
+        <button
+          onClick={handleOpenModal}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="hidden sm:inline">Nova Transação</span>
+        </button>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -113,13 +165,14 @@ export function FinancasPage() {
                 <th className="text-left font-semibold text-slate-400 p-3">Descrição</th>
                 <th className="text-right font-semibold text-slate-400 p-3">Valor</th>
                 <th className="text-right font-semibold text-slate-400 p-3">Data</th>
+                <th className="text-center font-semibold text-slate-400 p-3 w-16">Ações</th>
               </tr>
             </thead>
             <tbody>
               {data?.lancamentos.map((lanc) => (
-                <tr key={lanc.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
+                <tr key={lanc.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group">
                   <td className="p-3">
-                    <span className={`capitalize px-2 py-0.5 rounded-full text-xs ${lanc.tipo === 'receita' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                    <span className={`capitalize px-2 py-0.5 rounded-full text-xs font-medium ${lanc.tipo === 'receita' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                       {lanc.tipo}
                     </span>
                   </td>
@@ -130,12 +183,99 @@ export function FinancasPage() {
                   <td className="p-3 text-right text-slate-500">
                     {new Date(lanc.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                   </td>
+                  <td className="p-3 text-center">
+                    {!lanc.id.startsWith('__mock__') && (
+                      <button 
+                        onClick={() => handleDelete(lanc.id)}
+                        className="p-1.5 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
+              {(!data?.lancamentos || data.lancamentos.length === 0) && (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                    Nenhum lançamento encontrado ainda.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal - Nova Transação */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div 
+            className="w-full max-w-md bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-white mb-6 font-heading">Nova Transação</h3>
+            
+            <form onSubmit={handleModalSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Tipo</label>
+                <select
+                  value={formModal.tipo}
+                  onChange={(e) => setFormModal({ ...formModal, tipo: e.target.value as any })}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                >
+                  <option value="receita">Receita (Entrada)</option>
+                  <option value="despesa">Despesa (Saída)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Descrição</label>
+                <input
+                  type="text"
+                  required
+                  value={formModal.descricao}
+                  onChange={(e) => setFormModal({ ...formModal, descricao: e.target.value })}
+                  placeholder="Ex: Assinatura, Hospedagem..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Valor (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  min="0.01"
+                  value={formModal.valor}
+                  onChange={(e) => setFormModal({ ...formModal, valor: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                >
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -45,12 +45,21 @@ export function NovoLead() {
     if (!form.nome || !form.telefone) return;
     setLoading(true);
     try {
-      const payload = { ...form, plano_id: form.plano_id || null, status_funil: 'NOVO' };
+      const payload = {
+        nome: form.nome,
+        telefone: form.telefone,
+        email: form.email || null,
+        plano_id: form.plano_id || null,
+        origem: form.origem,
+        observacoes: form.observacoes || null,
+        status_funil: 'NOVO',
+      };
       const { error } = await supabase.from('clientes_crm').insert(payload);
       if (error) throw error;
       navigate('/clientes');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao criar lead', err);
+      alert(`Erro ao cadastrar lead: ${err?.message || 'Verifique os dados e tente novamente.'}`);
     } finally {
       setLoading(false);
     }
